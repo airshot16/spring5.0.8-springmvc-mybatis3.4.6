@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd">
+    
+	<!-- spring希望管理所有业务逻辑组件：
+			除了控制组件由spring mvc控制，配置在spring-servlet中，其他的组件都由spring管理，exclude -->
+	<context:component-scan base-package="com.ccg.mybatis">
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+	</context:component-scan>
+	
+	<!-- spring用来控制业务逻辑，数据源，事务控制，aop等等 -->
+	<context:property-placeholder location="classpath:jdbc.properties"/>
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+    	<property name="driverClassName" value="${oracle.driverClassName}" />
+		<property name="url" value="${oracle.url}" />
+		<property name="username" value="${oracle.username}" />
+		<property name="password" value="${oracle.password}" />
+    </bean>
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    	<property name="dataSource" ref="dataSource"></property>
+    </bean>
+    <!-- 开启基础注解的事务 -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+    
+    <!-- 整合mybatis:
+    		1、spring管理所有mapper的实现类。 则后面service层调用 Dao层等，都通过依赖注入的bean来调用，@Autowired
+    		2、利用spring管理事务
+    		-->
+    <!-- 创建SqlSessionFactory对象 -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+    	<property name="dataSource" ref="dataSource"></property>
+    	<!-- configLocation指定全局配置文件的位置 -->
+    	<property name="configLocation" value="classpath:mybatis-config.xml"></property>
+    	<!-- 指定mapper文件的位置 -->
+    	<property name="mapperLocations" value="classpath:mybatis/mapper/*"></property>
+    </bean>
+    		
+    <!-- 扫描所有mapper接口的实现，让这些mapper接口能够自动注入，比如注入到service中 -->
+    <!-- <mybatis-spring:scan base-package="com.ccg.mybatis.mapper"></mybatis-spring:scan> -->
+    <bean id="mapperScannerConfigurer" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+    	<property name="basePackage" value="com.ccg.mybatis.mapper"></property>
+    </bean>
+    
+	
+</beans>
